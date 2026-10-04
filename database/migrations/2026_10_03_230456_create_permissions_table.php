@@ -8,12 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('permissions', function (Blueprint $table) {
+        Schema::create('US_permissions', function (Blueprint $table) {
             // Llave primaria personalizada permissions_id
-            $table->id('permissions_id');
-            
-            // Llave foránea hacia la tabla roles
-            $table->foreignId('role_id')->constrained('roles')->onDelete('cascade');
+            $table->id();
             
             // Nombre del permiso (ej: 'users.create', 'tickets.read')
             $table->string('name');
@@ -25,6 +22,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('permissions');
+        Schema::dropIfExists('US_permissions');
     }
 };
