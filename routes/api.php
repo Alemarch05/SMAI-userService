@@ -11,3 +11,5 @@ Route::get('/user', function (Request $request) {
 
 Route::get('/roles', [RoleController::class, 'index']);
 Route::post('/auth/login', [AuthController::class, 'login']);
+Route::post('/roles/{roleId}/permissions', [RoleController::class, 'updatePermissions']);
+Route::get('/roles/{roleId}/permissions', [RoleController::class, 'getRolePermissions']);

@@ -15,5 +15,19 @@ class RoleRepository
         return Role::find($id, ['id', 'name', 'description']);
     }
 
+    public function findWithPermissions(int $roleId): Role
+    {
+        return Role::with('permissions')->findOrFail($roleId);
+    }
+
+    
+    public function syncPermissions(int $roleId, array $permissionIds): Role
+    {
+        $role = Role::findOrFail($roleId);
+        
+        $role->permissions()->sync($permissionIds);
+        
+        return $role->load('permissions');
+    }
 
 }
