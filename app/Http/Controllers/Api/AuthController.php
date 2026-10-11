@@ -38,4 +38,21 @@ class AuthController extends Controller
             'data' => $result
         ], 200);
     }
+
+    public function me(): JsonResponse
+    {
+        $userData = $this->authService->me();
+
+        if (!$userData) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Usuario no encontrado o no autenticado'
+            ], 401);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $userData
+        ], 200);
+    }
 }
