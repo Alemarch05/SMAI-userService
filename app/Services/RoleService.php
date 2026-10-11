@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Repositories\RoleRepository;
 use Illuminate\Database\Eloquent\Collection;
+use App\Models\Role;
 
 class RoleService
 {

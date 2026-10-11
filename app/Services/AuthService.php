@@ -16,9 +16,6 @@ class AuthService
         $this->userRepository = $userRepository;
     }
 
-    /**
-     * Lógica para validar credenciales y generar el JWT.
-     */
     public function login(array $credentials): ?array
     {
         if (!$token = Auth::guard('api')->attempt($credentials)) {
