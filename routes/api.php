@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\PermissionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\RoleController;
@@ -11,3 +12,4 @@ Route::get('/user', function (Request $request) {
 
 Route::get('/roles', [RoleController::class, 'index']);
 Route::post('/auth/login', [AuthController::class, 'login']);
+Route::post('/permissions', [PermissionController::class, 'store']);
