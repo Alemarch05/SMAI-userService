@@ -25,4 +25,9 @@ class PermissionRepository
         $permission->update($data);
         return $permission;
     }
+
+    public function delete(Permission $permission): bool
+    {
+        return $permission->delete();
+    }
 }

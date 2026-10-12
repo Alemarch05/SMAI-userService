@@ -43,4 +43,18 @@ class PermissionService
         return $this->permissionRepository->update($permission, $data);
     }
 
+    /**
+     * Eliminar un permiso por su ID.
+     */
+    public function deletePermission(int $id): bool
+    {
+        $permission = $this->permissionRepository->getById($id);
+
+        if (!$permission) {
+            return false;
+        }
+
+        return $this->permissionRepository->delete($permission);
+    }
+
 }

@@ -107,4 +107,24 @@ class PermissionController extends Controller
         ], 200);
     }
 
+    /**
+     * DELETE Eliminar un permiso por su ID.
+     */
+    public function destroy(int $id): JsonResponse
+    {
+        $deleted = $this->permissionService->deletePermission($id);
+
+        if (!$deleted) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Permiso no encontrado'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Permiso eliminado correctamente'
+        ], 200);
+    }
+
 }
