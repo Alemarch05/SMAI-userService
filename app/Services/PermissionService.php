@@ -32,4 +32,15 @@ class PermissionService
         return $this->permissionRepository->getById($id);
     }
 
+    public function updatePermission(int $id, array $data): ?Permission
+    {
+        $permission = $this->permissionRepository->getById($id);
+
+        if (!$permission) {
+            return null;
+        }
+
+        return $this->permissionRepository->update($permission, $data);
+    }
+
 }

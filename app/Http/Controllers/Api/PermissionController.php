@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\PermissionService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Validation\Rule;
 
 class PermissionController extends Controller
 {
@@ -69,6 +70,40 @@ class PermissionController extends Controller
         return response()->json([
             'success' => true,
             'data' => $permission
+        ], 200);
+    }
+
+    /**
+     * PUT Actualizar un permiso existente.
+     */
+    public function update(Request $request, int $id): JsonResponse
+    {
+        // 1. Validar las entradas (ignorando el ID actual en el unique)
+        $validated = $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::unique('US_permissions', 'name')->ignore($id),
+            ],
+            'description' => 'nullable|string|max:255',
+        ]);
+
+        // 2. Ejecutar la actualización en la capa de servicio
+        $updatedPermission = $this->permissionService->updatePermission($id, $validated);
+
+        // 3. Manejo de respuesta 404 o 200
+        if (!$updatedPermission) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Permiso no encontrado'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Permiso actualizado correctamente',
+            'data' => $updatedPermission
         ], 200);
     }
 

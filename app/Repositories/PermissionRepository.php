@@ -19,4 +19,10 @@ class PermissionRepository
     {
         return Permission::create($data);
     }
+
+    public function update(Permission $permission, array $data): Permission
+    {
+        $permission->update($data);
+        return $permission;
+    }
 }
