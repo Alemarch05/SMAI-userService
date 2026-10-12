@@ -37,4 +37,39 @@ class PermissionController extends Controller
             'data' => $permission
         ], 201);
     }
+
+    /**
+     * GET /api/permissions
+     * Listar todos los permisos.
+     */
+    public function index(): JsonResponse
+    {
+        $permissions = $this->permissionService->getAllPermissions();
+
+        return response()->json([
+            'success' => true,
+            'data' => $permissions
+        ], 200);
+    }
+
+    /*
+     * GET /api/permissions/{id} Obtener un permiso por ID.
+     */
+    public function show(int $id): JsonResponse
+    {
+        $permission = $this->permissionService->getPermissionById($id);
+
+        if (!$permission) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Permiso no encontrado'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $permission
+        ], 200);
+    }
+
 }

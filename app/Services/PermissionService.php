@@ -26,4 +26,10 @@ class PermissionService
     {
         return $this->permissionRepository->create($data);
     }
+
+    public function getPermissionById(int $id): ?Permission
+    {
+        return $this->permissionRepository->getById($id);
+    }
+
 }
