@@ -16,3 +16,4 @@ Route::post('/permissions', [PermissionController::class, 'store']);
 Route::get('/permissions', [PermissionController::class, 'index']);
 Route::get('/permissions/{id}', [PermissionController::class, 'show']);
 Route::put('/permissions/{id}', [PermissionController::class, 'update']);
+Route::delete('/permissions/{id}', [PermissionController::class, 'destroy']);
