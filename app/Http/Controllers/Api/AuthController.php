@@ -16,18 +16,13 @@ class AuthController extends Controller
         $this->authService = $authService;
     }
 
-    /**
-     * Endpoint POST /api/auth/login
-     */
     public function login(Request $request): JsonResponse
     {
-        // 1. Validar las entradas de la petición
         $credentials = $request->validate([
             'email' => 'required|email',
             'password' => 'required|string',
         ]);
 
-        // 2. Procesar la autenticación a través del servicio
         $result = $this->authService->login($credentials);
 
         if (!$result) {
@@ -41,6 +36,23 @@ class AuthController extends Controller
             'success' => true,
             'message' => 'Inicio de sesión exitoso',
             'data' => $result
+        ], 200);
+    }
+
+    public function me(): JsonResponse
+    {
+        $userData = $this->authService->me();
+
+        if (!$userData) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Usuario no encontrado o no autenticado'
+            ], 401);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $userData
         ], 200);
     }
 }
