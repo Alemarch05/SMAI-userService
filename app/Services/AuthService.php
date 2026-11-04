@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Models\User;
 
+
 class AuthService
 {
     protected UserRepository $userRepository;
@@ -34,6 +35,24 @@ class AuthService
                 'email' => $user->email,
                 'role' => $user->role ? $user->role->name : null,
             ]
+        ];
+    }
+
+    public function me(): ?array
+    {
+        $user = Auth::guard('api')->user();
+
+        if (!$user) {
+            return null;
+        }
+        
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role_id' => $user->role_id,
+            'role' => $user->role ? $user->role->name : null,
+            'created_at' => $user->created_at,
         ];
     }
 }
