@@ -46,9 +46,17 @@ class User extends Authenticatable implements JWTSubject
         return $this->getKey();
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getJWTCustomClaims(): array
     {
+        $roleName = $this->relationLoaded('role')
+            ? $this->role?->name
+            : ($this->role_id !== null ? $this->role()->value('name') : null);
+
         return [
+            'role' => $roleName,
         ];
     }
 
