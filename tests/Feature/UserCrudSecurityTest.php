@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\PresenceVerifierInterface;
 use Mockery\MockInterface;
+use RuntimeException;
 use Tests\TestCase;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
@@ -101,20 +102,23 @@ class UserCrudSecurityTest extends TestCase
         });
     }
 
-    public function test_unauthenticated_requests_return_401_json_even_without_accept_header(): void
+    public function test_unauthenticated_requests_return_401_standard_json_even_without_accept_header(): void
     {
-        $this->get('/api/users')->assertStatus(401)->assertJson(['message' => 'Unauthenticated.']);
-        $this->get('/api/users/1')->assertStatus(401)->assertJson(['message' => 'Unauthenticated.']);
-        $this->post('/api/users')->assertStatus(401)->assertJson(['message' => 'Unauthenticated.']);
-        $this->put('/api/users/1')->assertStatus(401)->assertJson(['message' => 'Unauthenticated.']);
-        $this->delete('/api/users/1')->assertStatus(401)->assertJson(['message' => 'Unauthenticated.']);
+        $expected = ['success' => false, 'message' => 'Unauthenticated.', 'data' => null];
+
+        $this->get('/api/users')->assertStatus(401)->assertExactJson($expected);
+        $this->get('/api/users/1')->assertStatus(401)->assertExactJson($expected);
+        $this->post('/api/users')->assertStatus(401)->assertExactJson($expected);
+        $this->put('/api/users/1')->assertStatus(401)->assertExactJson($expected);
+        $this->delete('/api/users/1')->assertStatus(401)->assertExactJson($expected);
     }
 
     public function test_invalid_jwt_token_is_rejected_with_401(): void
     {
         $this->withHeader('Authorization', 'Bearer invalid.jwt.token')
             ->getJson('/api/users')
-            ->assertStatus(401);
+            ->assertStatus(401)
+            ->assertJsonPath('success', false);
     }
 
     public function test_jwt_custom_claims_include_user_role(): void
@@ -143,11 +147,12 @@ class UserCrudSecurityTest extends TestCase
         $this->withHeader('Authorization', 'Bearer '.$token)
             ->getJson('/api/users')
             ->assertStatus(200)
-            ->assertJsonPath('status', 'success');
+            ->assertJsonPath('success', true);
 
         $this->withHeader('Authorization', 'Bearer '.$token)
             ->getJson('/api/users/3')
             ->assertStatus(200)
+            ->assertJsonPath('success', true)
             ->assertJsonPath('data.email', 'cliente@smai.com');
 
         $this->withHeader('Authorization', 'Bearer '.$token)
@@ -157,19 +162,23 @@ class UserCrudSecurityTest extends TestCase
                 'password' => 'secret1234',
                 'role_id' => 3,
             ])
-            ->assertStatus(403);
+            ->assertStatus(403)
+            ->assertJsonPath('success', false);
 
         $this->withHeader('Authorization', 'Bearer '.$token)
             ->putJson('/api/users/3', ['name' => 'Hack', 'role_id' => 1])
-            ->assertStatus(403);
+            ->assertStatus(403)
+            ->assertJsonPath('success', false);
 
         $this->withHeader('Authorization', 'Bearer '.$token)
             ->patchJson('/api/users/3', ['role_id' => 1])
-            ->assertStatus(403);
+            ->assertStatus(403)
+            ->assertJsonPath('success', false);
 
         $this->withHeader('Authorization', 'Bearer '.$token)
             ->deleteJson('/api/users/3')
-            ->assertStatus(403);
+            ->assertStatus(403)
+            ->assertJsonPath('success', false);
     }
 
     public function test_support_user_is_denied_on_user_mutation_routes(): void
@@ -179,14 +188,16 @@ class UserCrudSecurityTest extends TestCase
 
         $this->withHeader('Authorization', 'Bearer '.$token)
             ->putJson('/api/users/3', ['role_id' => 1])
-            ->assertStatus(403);
+            ->assertStatus(403)
+            ->assertJsonPath('success', false);
 
         $this->withHeader('Authorization', 'Bearer '.$token)
             ->deleteJson('/api/users/3')
-            ->assertStatus(403);
+            ->assertStatus(403)
+            ->assertJsonPath('success', false);
     }
 
-    public function test_admin_can_execute_full_user_crud(): void
+    public function test_admin_can_execute_full_user_crud_with_standard_response_envelope(): void
     {
         $admin = $this->inMemoryUsers[1];
         $token = JWTAuth::fromUser($admin);
@@ -197,11 +208,17 @@ class UserCrudSecurityTest extends TestCase
         $this->mock(UserServices::class, function (MockInterface $mock) use ($createdUser, $updatedUser): void {
             $mock->shouldReceive('createUser')
                 ->once()
+                ->with([
+                    'name' => 'Nuevo Usuario',
+                    'email' => 'nuevo@smai.com',
+                    'password' => 'password123',
+                    'role_id' => 2,
+                ])
                 ->andReturn($createdUser);
 
             $mock->shouldReceive('updateUser')
                 ->once()
-                ->with(10, ['name' => 'Usuario Editado', 'role_id' => 1])
+                ->with(10, ['name' => 'Usuario Editado', 'password' => null, 'role_id' => 1])
                 ->andReturn($updatedUser);
 
             $mock->shouldReceive('deleteUser')
@@ -223,30 +240,78 @@ class UserCrudSecurityTest extends TestCase
                 'role_id' => 2,
             ])
             ->assertStatus(201)
-            ->assertJsonPath('status', 'success')
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Usuario creado correctamente')
             ->assertJsonPath('data.role.name', 'soporte');
 
         $this->withHeader('Authorization', 'Bearer '.$token)
             ->putJson('/api/users/10', [
                 'name' => 'Usuario Editado',
+                'password' => '',
                 'role_id' => 1,
             ])
             ->assertStatus(200)
-            ->assertJsonPath('status', 'success')
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Usuario actualizado correctamente')
             ->assertJsonPath('data.role.name', 'admin');
 
         $this->withHeader('Authorization', 'Bearer '.$token)
             ->deleteJson('/api/users/10')
             ->assertStatus(200)
-            ->assertJsonPath('status', 'success');
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Usuario eliminado correctamente')
+            ->assertJsonPath('data', null);
 
         $this->withHeader('Authorization', 'Bearer '.$token)
             ->getJson('/api/users/999')
             ->assertStatus(404)
-            ->assertJsonPath('status', 'error');
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('data', null);
     }
 
-    public function test_admin_receives_400_for_invalid_optional_id_usage_and_404_for_non_numeric_id(): void
+    public function test_store_returns_422_on_validation_errors(): void
+    {
+        $admin = $this->inMemoryUsers[1];
+        $token = JWTAuth::fromUser($admin);
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson('/api/users', [
+                'name' => 'Duplicado',
+                'email' => 'duplicate@smai.com',
+                'password' => 'short',
+                'role_id' => 999,
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('data', null)
+            ->assertJsonValidationErrors(['email', 'password', 'role_id']);
+    }
+
+    public function test_store_returns_500_with_real_error_on_exception(): void
+    {
+        $admin = $this->inMemoryUsers[1];
+        $token = JWTAuth::fromUser($admin);
+
+        $this->mock(UserServices::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('createUser')
+                ->once()
+                ->andThrow(new RuntimeException('SQLSTATE[23505]: duplicate key value violates unique constraint'));
+        });
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson('/api/users', [
+                'name' => 'Fallo DB',
+                'email' => 'fallo@smai.com',
+                'password' => 'password123',
+                'role_id' => 1,
+            ])
+            ->assertStatus(500)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'SQLSTATE[23505]: duplicate key value violates unique constraint')
+            ->assertJsonPath('data', null);
+    }
+
+    public function test_method_not_allowed_and_not_found_for_clean_rest_routes(): void
     {
         $admin = $this->inMemoryUsers[1];
         $token = JWTAuth::fromUser($admin);
@@ -258,19 +323,23 @@ class UserCrudSecurityTest extends TestCase
                 'password' => 'password123',
                 'role_id' => 2,
             ])
-            ->assertStatus(400);
+            ->assertStatus(405)
+            ->assertJsonPath('success', false);
 
         $this->withHeader('Authorization', 'Bearer '.$token)
             ->putJson('/api/users', ['name' => 'Sin ID'])
-            ->assertStatus(400);
+            ->assertStatus(405)
+            ->assertJsonPath('success', false);
 
         $this->withHeader('Authorization', 'Bearer '.$token)
             ->deleteJson('/api/users')
-            ->assertStatus(400);
+            ->assertStatus(405)
+            ->assertJsonPath('success', false);
 
         $this->withHeader('Authorization', 'Bearer '.$token)
             ->getJson('/api/users/abc')
-            ->assertStatus(404);
+            ->assertStatus(404)
+            ->assertJsonPath('success', false);
     }
 
     private function buildUser(int $id, string $name, string $email, int $roleId, string $roleName): User

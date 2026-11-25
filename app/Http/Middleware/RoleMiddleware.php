@@ -19,15 +19,17 @@ class RoleMiddleware
 
         if (! $user) {
             return response()->json([
-                'status' => 'error',
+                'success' => false,
                 'message' => 'No autenticado.',
+                'data' => null,
             ], 401);
         }
 
         if ($roles === []) {
             return response()->json([
-                'status' => 'error',
+                'success' => false,
                 'message' => 'Acceso denegado. No se especificaron roles permitidos.',
+                'data' => null,
             ], 403);
         }
 
@@ -36,8 +38,9 @@ class RoleMiddleware
 
         if (! is_string($userRole) || trim($userRole) === '') {
             return response()->json([
-                'status' => 'error',
+                'success' => false,
                 'message' => 'Acceso denegado. El usuario no tiene un rol asignado.',
+                'data' => null,
             ], 403);
         }
 
@@ -48,8 +51,9 @@ class RoleMiddleware
 
         if (! in_array(strtolower(trim($userRole)), $allowedRoles, true)) {
             return response()->json([
-                'status' => 'error',
+                'success' => false,
                 'message' => 'Acceso denegado. No tienes permisos suficientes para realizar esta acción.',
+                'data' => null,
             ], 403);
         }
 

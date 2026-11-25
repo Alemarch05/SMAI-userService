@@ -31,11 +31,11 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/permissions', [PermissionController::class, 'store']);
     
     Route::get('/users', [UserController::class, 'index']);
-    Route::get('/users/{id?}', [UserController::class, 'show'])->whereNumber('id');
+    Route::get('/users/{id}', [UserController::class, 'show'])->whereNumber('id');
 
     Route::middleware('role:admin')->group(function () {
-        Route::post('/users/{id?}', [UserController::class, 'store'])->whereNumber('id');
-        Route::match(['put', 'patch'], '/users/{id?}', [UserController::class, 'update'])->whereNumber('id');
-        Route::delete('/users/{id?}', [UserController::class, 'destroy'])->whereNumber('id');
+        Route::post('/users', [UserController::class, 'store']);
+        Route::match(['put', 'patch'], '/users/{id}', [UserController::class, 'update'])->whereNumber('id');
+        Route::delete('/users/{id}', [UserController::class, 'destroy'])->whereNumber('id');
     });
 });
